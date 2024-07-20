@@ -1,5 +1,5 @@
 # RBLXID Onsale Checker
-
+(tutorial in videos folder) btw :) 
 ## Overview
 
 The **RBLXID Onsale Checker** is a Python application designed to check the sale status of Roblox catalog items. It has two versions:
