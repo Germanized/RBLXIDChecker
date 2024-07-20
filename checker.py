@@ -20,9 +20,8 @@ catalog_ids = [
 def check_catalog_ids(catalog_ids):
     on_sale_ids = []
 
-    # Configure Selenium options
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--headless")  
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
@@ -33,14 +32,13 @@ def check_catalog_ids(catalog_ids):
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
     chrome_options.add_experimental_option('useAutomationExtension', False)
 
-    # Initialize the Chrome driver
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
 
     for catalog_id in catalog_ids:
         try:
             url = f"https://www.roblox.com/catalog/{catalog_id}"
             driver.get(url)
-            time.sleep(2)  # Wait for the page to load and redirect if necessary
+            time.sleep(2)  
 
             buy_button = driver.find_elements(By.CLASS_NAME, "shopping-cart-buy-button")
             buy_button_alt = driver.find_elements(By.CLASS_NAME, "PurchaseButton")
@@ -59,7 +57,7 @@ def check_catalog_ids(catalog_ids):
 def main_menu():
     questions = [
         inquirer.List('action',
-                      message="What would you like to do?",
+                      message="Welcome to Marcelos RBLXID checker choose somthing fag?",
                       choices=['Check Predefined Catalog IDs', 'Input Raw Catalog IDs', 'Exit'])
     ]
     answers = inquirer.prompt(questions)
@@ -84,7 +82,7 @@ def main_menu():
         for id in on_sale_ids:
             print(f"Catalog ID: {id}")
     else:
-        print("None of the catalog IDs are on sale.")
+        print("None of the catalog IDs are on sale womp womp.")
 
     input("Press any key to continue...")
 
