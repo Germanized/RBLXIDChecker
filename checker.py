@@ -1,30 +1,11 @@
-import subprocess
-import sys
+import inquirer
 import os
 import time
-
-required_modules = [
-    "requests",
-    "webbrowser",
-    "inquirer"
-]
-
-def check_and_install_modules(modules):
-    for module in modules:
-        try:
-            __import__(module)
-            print(f"Module {module} is already installed.")
-        except ImportError:
-            print(f"Module {module} not found. Installing...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", module])
-            print(f"Module {module} installed successfully.")
-
-check_and_install_modules(required_modules)
-
-import requests
-import webbrowser
-import inquirer
-import ctypes
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 catalog_ids = [
     17901274960, 17900412562, 18101120017, 18101787305, 17900817639,
@@ -36,33 +17,44 @@ catalog_ids = [
     18101095928
 ]
 
-def set_console_title(title):
-    ctypes.windll.kernel32.SetConsoleTitleW(title)
-
-def typewriter_title_animation(title, delay=0.1):
-    for i in range(len(title) + 1):
-        set_console_title(title[:i])
-        time.sleep(delay)
-    time.sleep(1)
-    for i in range(len(title) + 1):
-        set_console_title(title[:len(title)-i])
-        time.sleep(delay)
-    set_console_title("")  
-
 def check_catalog_ids(catalog_ids):
-    for catalog_id in catalog_ids:
-        url = f"https://economy.roblox.com/v1/assets/{catalog_id}/resale-data"
-        response = requests.get(url)
+    on_sale_ids = []
 
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('assetResalePrices'):
+    # Configure Selenium options
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-infobars")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--log-level=3")
+    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
+
+    # Initialize the Chrome driver
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+
+    for catalog_id in catalog_ids:
+        try:
+            url = f"https://www.roblox.com/catalog/{catalog_id}"
+            driver.get(url)
+            time.sleep(2)  # Wait for the page to load and redirect if necessary
+
+            buy_button = driver.find_elements(By.CLASS_NAME, "shopping-cart-buy-button")
+            buy_button_alt = driver.find_elements(By.CLASS_NAME, "PurchaseButton")
+
+            if buy_button or buy_button_alt:
                 print(f"Catalog ID {catalog_id} is on sale.")
-                webbrowser.open(f"https://www.roblox.com/catalog/{catalog_id}")
+                on_sale_ids.append(catalog_id)
             else:
                 print(f"Catalog ID {catalog_id} is not on sale.")
-        else:
-            print(f"Failed to retrieve data for Catalog ID {catalog_id}. Status code: {response.status_code}")
+        except Exception as e:
+            print(f"Failed to retrieve data for Catalog ID {catalog_id}. Error: {str(e)}")
+
+    driver.quit()
+    return on_sale_ids
 
 def main_menu():
     questions = [
@@ -73,17 +65,29 @@ def main_menu():
     answers = inquirer.prompt(questions)
 
     if answers['action'] == 'Check Predefined Catalog IDs':
-        check_catalog_ids(catalog_ids)
+        on_sale_ids = check_catalog_ids(catalog_ids)
     elif answers['action'] == 'Input Raw Catalog IDs':
         raw_ids = inquirer.text(message="Enter catalog IDs separated by spaces:")
         if raw_ids:
-            raw_ids_list = [int(id.strip()) for id in raw_ids.split()]
-            check_catalog_ids(raw_ids_list)
+            try:
+                raw_ids_list = [int(id.strip()) for id in raw_ids.split()]
+                on_sale_ids = check_catalog_ids(raw_ids_list)
+            except ValueError:
+                print("Invalid catalog ID format. Please enter only numbers separated by spaces.")
+                return
     elif answers['action'] == 'Exit':
         print("Goodbye!")
         exit()
 
+    if on_sale_ids:
+        print("The following catalog IDs are on sale:")
+        for id in on_sale_ids:
+            print(f"Catalog ID: {id}")
+    else:
+        print("None of the catalog IDs are on sale.")
+
+    input("Press any key to continue...")
+
 if __name__ == "__main__":
-    os.system('')  
-    typewriter_title_animation("RBLXID onsale checker by Marcelo", delay=0.1)
+    os.system('')
     main_menu()
